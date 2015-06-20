@@ -118,17 +118,6 @@ void pinMode(uint8_t pin, uint8_t mode)
 #define _BV(val) ( 1<<(val) )
 
 /* Wrapper functions for sending data over i2c */
-void i2cWrite(uint32_t address, uint32_t length, uint8_t * data)
-{
-	/* Sends length bytes at data to slave address. */
-	i2c(I2C_TRANSMITTER, address, length, data);
-}
-
-void i2cRead(uint32_t address, uint32_t length, uint8_t* dest)
-{
-	/* Reads length bytes to dest from slave address. */
-	i2c(I2C_RECEIVER, address, length, dest);
-}
 
 void i2c(uint32_t direction, uint32_t address, uint32_t length, uint8_t* data)
 {
@@ -143,10 +132,10 @@ void i2c(uint32_t direction, uint32_t address, uint32_t length, uint8_t* data)
 	/* Transmit a read request, then listen */
 	i2cSetStop(i2cREG1);
 	i2cSetStart(i2cREG1);
-	if(mode == I2C_RECEIVER){
+	if(direction == I2C_RECEIVER){
 		i2cReceive(i2cREG1, length, data);
 	}
-	else if( mode == I2C_TRANSMITTER ){
+	else if( direction == I2C_TRANSMITTER ){
 		i2cSend(i2cREG1, length, data);
 	}
 	/* Generate stop condition */
@@ -155,10 +144,23 @@ void i2c(uint32_t direction, uint32_t address, uint32_t length, uint8_t* data)
 	i2cClearSCD(i2cREG1);
 }
 
+void i2cWrite(uint32_t address, uint32_t length, uint8_t * data)
+{
+	/* Sends length bytes at data to slave address. */
+	i2c(I2C_TRANSMITTER, address, length, data);
+}
+
+void i2cRead(uint32_t address, uint32_t length, uint8_t* dest)
+{
+	/* Reads length bytes to dest from slave address. */
+	i2c(I2C_RECEIVER, address, length, dest);
+}
+
 float *parseToArrayOfUnknownSize(char *string)
 {
+	const uint16_t MAX_SIZE = 80;
 	/* Todo: Implement more robust solution than "10 curves sounds good enough */
-	float *arr = calloc(sizeof(float), 80);
+	float *arr = calloc(sizeof(float), MAX_SIZE);
 	char *comma = string;
 	char *focus = string;
 	uint8_t i = 0;
@@ -166,37 +168,29 @@ float *parseToArrayOfUnknownSize(char *string)
 	do{
 		arr[i++] = (float)strtod(focus, &comma);
 		focus = comma + 1;
-	} while(comma != '\0' || *comma != ' ');
+	} while(comma != '\0' && i < MAX_SIZE);
 
 	return arr;
 }
 
-float *parseToArray(char *string, uint8_t length)
-{	/* Parses an array out of a string of values, and
+float *parseToArray(char *string, uint16_t length)
+{	/* Parses a length long array out of a string of values, and
 	 * returns a pointer to the malloc'd array.
 	 */
 	float *arr = calloc(sizeof(float), length);
 	char *comma = string;
 	char *focus = string;
 
-	for(uint8_t i = 0; i < length; i++)
+	for(uint16_t i = 0; i < length; i++)
 	{
 		arr[i] = (float)strtod(focus, &comma);
-		if( comma != 0 )
+		if(comma != '\0')
 		{
 			focus = comma + 1;
 		}
 		else
 		{
-			for( uint8_t rest = i; rest < length; rest++)
-			{ /* Fill the rest of the array with 0s. */
-				arr[i] = 0.f;
-				/* What I'd really like to do is call an error
-				 * function and log this happening, along with
-				 * the name of the telemetry handler.
-				 */
-			}
-			break;
+			focus = comma; /* Just leave focus at the null char. strtod will handle the rest. */
 		}
 	}
 
@@ -228,7 +222,7 @@ vector diff(vector P1, vector P0)
 	return difference;
 }
 
-uint8_t max(uint8_t a, uint8_t b)
+uint8_t max(uint16_t a, uint16_t b)
 {
 	if( a < b )
 	{
@@ -240,7 +234,7 @@ uint8_t max(uint8_t a, uint8_t b)
 	}
 }
 
-uint8_t min(uint8_t a, uint8_t b)
+uint8_t min(uint16_t a, uint16_t b)
 {
 	if( a < b )
 	{

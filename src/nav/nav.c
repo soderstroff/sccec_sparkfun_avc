@@ -38,7 +38,7 @@ void updateNav()
 	  on every update.
 	*/
 	navData* NavData;
-	float desiredHeading, headingDiff, adjustedHeading;
+	float desiredHeading, headingDiff;
 
 	NavData = getNavData();
 	desiredHeading = getDesiredHeading(NavData->position);

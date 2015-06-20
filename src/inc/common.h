@@ -67,11 +67,11 @@ typedef struct s_vector {
 float findAngle(vector vec);
 float norm (vector point);
 vector diff(vector, vector);
-uint8_t max(uint8_t, uint8_t);
-uint8_t min(uint8_t, uint8_t);
+uint16_t max(uint16_t, uint16_t);
+uint16_t min(uint16_t, uint16_t);
 
 /* Parsing */
-float *parseToArray(char *string, uint8_t length);
+float *parseToArray(char *string, uint16_t length);
 float *parseToArrayOfUnknownSize(char *string);
 
 /* These two functions will ONLY accept the commas being
