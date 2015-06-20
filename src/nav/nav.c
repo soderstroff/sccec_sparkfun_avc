@@ -8,32 +8,22 @@
 #include <math.h>
 
 #include "common.h"
-#include "nav.h"
-#include "sensors.h"
-#include "pid.h"
-#include "bezier.h"
 #include "telemetry.h"
+#include "sensors.h"
+#include "nav.h"
+#include "bezier.h"
 
 motionData MotionData;
-errParams headingParams, throttleParams;
 const float magneticDeclination;
 
 /* Forward declarations */
-void setThrottlePID(char*, char*);
-void setHeadingPID(char*, char*);
 float findCorrection(float, float);
-
 
 void initNav()
 {
 
 	initMap(map); /* Map is defined in common.h */
 
-	setErrParams(&headingParams, 3.f, 2.f, 0.1f, .1f); /* Heading PID values. */
-
-	/* Event Handlers */
-	addTelemetryEventHandler(setHeadingPID);
-	addTelemetryEventHandler(setThrottlePID);
 }
 
 void updateNav()
@@ -45,7 +35,6 @@ void updateNav()
 	  - finds difference between desired position and real position
 	  to obtain desired heading;
 	  - find difference between desired heading and real heading
-	  - applies PID to heading differences and speed
 	  - creates instructions for motion module;
 	  - and pushes instructions to MotionData
 	  on every update.
@@ -58,9 +47,7 @@ void updateNav()
   
 	headingDiff = findCorrection(NavData->heading, getDesiredHeading(NavData->position));
   
-	adjustedHeading = pidAdjust(headingDiff, &headingParams);
-  
-	MotionData.heading = adjustedHeading;
+	MotionData.heading = headingDiff;
   
 }
 
@@ -92,26 +79,4 @@ float findCorrection(float current, float desired)
 	return correction;
 }
 
-/* Event handlers */
 
-void setHeadingPID(char *key, char *paramsString)
-{	/* Event handler for the "setHeadingPID" key. */
-  
- 	if ( strcmp(key, "setHeadingPID") == 0 )
-	{
-		float* params = parseToArray(paramsString, 4);
-		setErrParams( &headingParams, params[0], params[1], params[2], params[3] );
-		free(params);
-	}	
-}
-
-void setThrottlePID(char *key, char *paramsString)
-{	/* Event handler for the "setMotionPID" key. */
-	
-	if ( strcmp(key, "setThrottlePID") == 0 )
-	{
-		float* params = parseToArray(paramsString, 4);
-		setErrParams( &throttleParams, params[0], params[1], params[2], params[3] );
-		free(params);
-	}	
-}
