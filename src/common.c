@@ -10,6 +10,7 @@
  */
 #include "common.h"
 #include <math.h>
+#include "i2c.h"
 
 /* UNIMPLEMENTED FUNCTION STUBS */
 /* Time functions, should be replaced by RTI Module calls */
@@ -115,6 +116,44 @@ void pinMode(uint8_t pin, uint8_t mode)
 	;
 }
 #define _BV(val) ( 1<<(val) )
+
+/* Wrapper functions for sending data over i2c */
+void i2cWrite(uint32_t address, uint32_t length, uint8_t * data)
+{
+	/* Sends length bytes at data to slave address. */
+	i2c(I2C_TRANSMITTER, address, length, data);
+}
+
+void i2cRead(uint32_t address, uint32_t length, uint8_t* dest)
+{
+	/* Reads length bytes to dest from slave address. */
+	i2c(I2C_RECEIVER, address, length, dest);
+}
+
+void i2c(uint32_t direction, uint32_t address, uint32_t length, uint8_t* data)
+{
+	/* Does the heavy lifting for the previous two functions. */
+
+	/* Configure register values */
+	i2cSetSlaveAdd(i2cREG1, address);
+	i2cSetDirection(i2cREG1, direction);
+	i2cSetMode(i2cREG1, I2C_MASTER);
+	i2cSetCount(i2cREG1, length);
+
+	/* Transmit a read request, then listen */
+	i2cSetStop(i2cREG1);
+	i2cSetStart(i2cREG1);
+	if(mode == I2C_RECEIVER){
+		i2cReceive(i2cREG1, length, data);
+	}
+	else if( mode == I2C_TRANSMITTER ){
+		i2cSend(i2cREG1, length, data);
+	}
+	/* Generate stop condition */
+	while(i2cIsBusBusy(i2cREG1) == true);
+	while(i2cIsStopDetected(i2cREG1) == 0);
+	i2cClearSCD(i2cREG1);
+}
 
 float *parseToArrayOfUnknownSize(char *string)
 {

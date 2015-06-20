@@ -21,9 +21,7 @@ float findCorrection(float, float);
 
 void initNav()
 {
-
 	initMap(map); /* Map is defined in common.h */
-
 }
 
 void updateNav()
@@ -40,13 +38,11 @@ void updateNav()
 	  on every update.
 	*/
 	navData* NavData;
-	float  headingDiff;
-	float adjustedHeading;
+	float desiredHeading, headingDiff, adjustedHeading;
 
 	NavData = getNavData();
-  
-	headingDiff = findCorrection(NavData->heading, getDesiredHeading(NavData->position));
-  
+	desiredHeading = getDesiredHeading(NavData->position);
+	headingDiff = findCorrection(NavData->heading, desiredHeading);
 	MotionData.heading = headingDiff;
   
 }
